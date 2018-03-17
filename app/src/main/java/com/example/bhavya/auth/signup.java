@@ -8,8 +8,11 @@ import android.view.View;
 import android.view.inputmethod.EditorInfo;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -22,6 +25,15 @@ public class signup extends AppCompatActivity {
     private static final String ip = "192.168.1.6";
     private static final String port = "5454";
 
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
+        Intent intent = new Intent(Intent.ACTION_MAIN);
+        intent.addCategory(Intent.CATEGORY_HOME);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        startActivity(intent);
+    }
+
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_signup);
@@ -31,12 +43,12 @@ public class signup extends AppCompatActivity {
 
             @Override
             public void onClick(View view) {
-                EditText username = (EditText) findViewById(R.id.username);
-                EditText password = (EditText) findViewById(R.id.password);
+                final StringBuffer response=new StringBuffer();
+                final EditText username = (EditText) findViewById(R.id.username);
+                final EditText password = (EditText) findViewById(R.id.password);
+                final TextView message= (TextView) findViewById(R.id.message);
                 final String json = "{\"username\":\"" + username.getText().toString() + "\",\"password\":\"" + password.getText().toString() + "\"}";
-                username.setText(" ");
-                password.setText(" ");
-                Thread thread = new Thread(new Runnable() {
+                final Thread thread = new Thread(new Runnable() {
                     @Override
                     public void run() {
                         try {
@@ -49,17 +61,55 @@ public class signup extends AppCompatActivity {
                             os = conn.getOutputStream();
                             os.write(json.getBytes());
                             os.flush();
-                            conn.getResponseCode() ;
                             os.close();
+                            conn.getResponseCode();
+                            BufferedReader in = new BufferedReader(
+                                    new InputStreamReader(conn.getInputStream()));
+                            String inputLine;
+                            while ((inputLine = in.readLine()) != null) {
+                                response.append(inputLine);
+                            }
+                            in.close();
                             conn.disconnect();
-                            startActivity(new Intent(signup.this, home.class));
 
                         }catch (Exception e){
                             //error occured
+                            Log.d("error",e.toString());
                         }
                     }
                 });
                 thread.start();
+                try {
+                    thread.join();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                if(response.toString().equals("okay"))
+                {
+                    startActivity(new Intent(signup.this, home.class));
+                    finish();
+                }
+                if(response.toString().equals("taken"))
+                {
+                    username.setText(" ");
+                    password.setText(" ");
+                    message.setVisibility(View.VISIBLE);
+                }
+
+                if(response.toString().equals("loggedIn"))
+                {
+                    username.setText(" ");
+                    password.setText(" ");
+
+                    if(response.toString().equals("taken"))
+                    {
+                        username.setText(" ");
+                        password.setText(" ");
+                        message.setText("you are already logged in....");
+                        message.setVisibility(View.VISIBLE);
+
+                    }
+                }
             }
         });
         }

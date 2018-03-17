@@ -11,4 +11,11 @@
         android:layout_weight="0.40"
         android:text="HELLO"
         android:textAppearance="@style/TextAppearance.AppCompat.Display1" />
+
+    <Button
+        android:id="@+id/logout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="0.40"
+        android:text="logout" />
 </LinearLayout>
